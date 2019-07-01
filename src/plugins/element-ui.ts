@@ -1,0 +1,84 @@
+import Vue from "vue";
+import {
+  Button,
+  Dropdown,
+  DropdownItem,
+  DropdownMenu,
+  Table,
+  TableColumn,
+  Pagination,
+  Radio,
+  RadioGroup,
+  Dialog,
+  Upload,
+  Tooltip,
+  Select,
+  Option,
+  Checkbox,
+  CheckboxGroup,
+  DatePicker,
+  Tabs,
+  TabPane,
+  Loading,
+  Popover,
+  Slider,
+  Progress,
+  Form,
+  FormItem,
+  Input,
+  Autocomplete,
+  Cascader,
+  Collapse,
+  CollapseItem,
+  Carousel,
+  CarouselItem,
+  RadioButton,
+  Alert,
+  Switch,
+  Menu,
+  MenuItem,
+  Submenu,
+  Link,
+  Badge
+} from "element-ui";
+
+Vue.use(Button);
+Vue.use(Dropdown);
+Vue.use(DropdownItem);
+Vue.use(DropdownMenu);
+Vue.use(Table);
+Vue.use(TableColumn);
+Vue.use(Pagination);
+Vue.use(Radio);
+Vue.use(RadioGroup);
+Vue.use(RadioButton);
+Vue.use(Dialog);
+Vue.use(Upload);
+Vue.use(Tooltip);
+Vue.use(Select);
+Vue.use(Option);
+Vue.use(Checkbox);
+Vue.use(CheckboxGroup);
+Vue.use(DatePicker);
+Vue.use(Tabs);
+Vue.use(TabPane);
+Vue.use(Loading);
+Vue.use(Popover);
+Vue.use(Slider);
+Vue.use(Progress);
+Vue.use(Form);
+Vue.use(FormItem);
+Vue.use(Input);
+Vue.use(Autocomplete);
+Vue.use(Cascader);
+Vue.use(Collapse);
+Vue.use(CollapseItem);
+Vue.use(Carousel);
+Vue.use(CarouselItem);
+Vue.use(Alert);
+Vue.use(Switch);
+Vue.use(Menu);
+Vue.use(MenuItem);
+Vue.use(Submenu);
+Vue.use(Link);
+Vue.use(Badge);

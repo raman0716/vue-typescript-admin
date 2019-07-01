@@ -1,0 +1,6 @@
+// noneed
+export default [
+  {
+    path: "/"
+  }
+];
