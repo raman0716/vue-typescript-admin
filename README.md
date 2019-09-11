@@ -28,6 +28,13 @@ npm run prettier
  &emsp;&emsp;&emsp;component: () => import("@/pages/user[.id].vue"),<br>
  }
 
+> files in pages should be named like name.txt$.vue, then generated route-config is <br>
+ { <br>
+ &emsp;&emsp;&emsp;path: "/name/:txt?",<br>
+ &emsp;&emsp;&emsp;name: "name",<br>
+ &emsp;&emsp;&emsp;component: () => import("@/pages/name.txt$.vue"),<br>
+ }
+
 ```
 npm run generate:route / generate:route:watch
 ```

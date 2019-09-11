@@ -4,7 +4,7 @@ const TerserPlugin = require('terser-webpack-plugin');
 const resolve = dir => require('path').join(__dirname, dir);
 
 // 增加环境变量
-process.env.VUE_APP_VERSION = require('./package.json').version;
+process.env.VUE_APP_VERSION = require('./version.json').version;
 process.env.VUE_APP_BUILD_TIME = require('dayjs')().format('YYYY-M-D HH:mm:ss');
 
 // 基础路径 注意发布之前要先修改这里

@@ -8,14 +8,6 @@ export default [
     }
   },
   {
-    path: "/account/register",
-    name: "account-register",
-    component: () => import("@/pages/account/register.vue"),
-    meta: {
-      withMenu: true
-    }
-  },
-  {
     path: "/home",
     name: "home",
     component: () => import("@/pages/home.vue"),
@@ -29,6 +21,14 @@ export default [
     component: () => import("@/pages/login.vue"),
     meta: {
       withMenu: false
+    }
+  },
+  {
+    path: "/register",
+    name: "register",
+    component: () => import("@/pages/register.vue"),
+    meta: {
+      withMenu: true
     }
   },
   {

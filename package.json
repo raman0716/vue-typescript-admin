@@ -13,6 +13,7 @@
     "serve:watch": "concurrently \"npm run watch\" \"npm run serve\"",
     "serve": "vue-cli-service serve --mode development",
     "watch": "node ./watch.js",
+    "version-control": "node ./.hooks/version-control.js && git add version.json",
     "build": "npm run generate:route && vue-cli-service build",
     "build:test": "npm run generate:route && vue-cli-service build --mode test",
     "generate:route": "node route-generator.js",
@@ -93,7 +94,7 @@
   },
   "pre-commit": {
     "run": [
-      "generate:route",
+      "version-control",
       "prettier"
     ],
     "silent": true

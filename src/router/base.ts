@@ -12,7 +12,7 @@ module.exports = [
     meta: {
       withMenu: false,
       // 登录认证 是否需要重定
-      auth: true,
+      auth: true
     }
   },
   {
@@ -22,12 +22,12 @@ module.exports = [
     meta: {
       withMenu: false,
       // 登录认证 是否需要重定
-      auth: true,
+      auth: true
     }
   },
   {
     path: "*",
-    name: '404',
+    name: "404",
     redirect: "/home"
   }
 ];
