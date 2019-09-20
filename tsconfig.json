@@ -37,7 +37,7 @@
     "tests/**/*.tsx",
     "src/locale/index.ts",
     "src/api/index.ts",
-    "src/api/modules/userService.ts",
+    "src/api/modules/user-service.ts",
     "src/api/axios.ts",
     "route-generator.js"
   ],
