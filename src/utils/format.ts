@@ -1,5 +1,5 @@
 // 数字小数位数格式化
-export const formatNum = function (str: string, float: number | undefined | string = 2) {
+export const formatNum = function(str: string, float: number | undefined | string = 2) {
   if (!str) return;
   str = str.toString();
   if (str.length > 1 && str.charAt(0) === "0" && str.charAt(1) !== ".") {
@@ -19,14 +19,14 @@ export const formatNum = function (str: string, float: number | undefined | stri
   newStr = float === 0 ? str.slice(0, str.length) : newStr;
   const newStrFlot: any = arr && arr[1].replace(reg, "");
   return float !== "0" && i !== -1 ? newStr + "." + newStrFlot.slice(0, float) : newStr;
-}
+};
 
 /**
  * @description 数字千分位格式化
  * @param value 原始值
  * @param fixed 保留的位数
  */
-export const divideNumber = function (value: number | string, fixed: number = 0) {
+export const divideNumber = function(value: number | string, fixed: number = 0) {
   value = Number(value).toFixed(fixed);
   let [pre, end] = value.split(".");
   if (pre.length <= 3) {
@@ -39,4 +39,4 @@ export const divideNumber = function (value: number | string, fixed: number = 0)
     }
     return fixed > 0 ? `${res}.${(end || "").padEnd(fixed, "0")}` : res;
   }
-}
+};
