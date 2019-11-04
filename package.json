@@ -94,8 +94,7 @@
   },
   "pre-commit": {
     "run": [
-      "version-control",
-      "prettier"
+      "version-control"
     ],
     "silent": true
   }

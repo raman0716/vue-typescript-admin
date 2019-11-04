@@ -1,31 +1,31 @@
 <template>
-  <div class="upload-to-oss"
+  <div class="upload_to_oss"
        title="粘贴或拖拽即可上传图片"
-       :class="{'upload-to-oss--highlight': isHighlight}">
+       :class="{'upload_to_oss_highlight': isHighlight}">
     <!--图片的展示区域-->
     <template v-if="!$slots.default">
       <div v-for="(imgUrl, index) in uploadList"
            :key="index"
-           class="upload-item"
-           :class="{'is-preview': preview}"
+           class="upload_item"
+           :class="{'is_preview': preview}"
            :style="{'width': width+'px', 'height':height+'px'}">
         <i title="删除图片"
            v-if="!disabled"
-           class="upload-del-icon"
+           class="upload_del_icon"
            @click.stop.prevent="onDelete(imgUrl, index)"></i>
         <img :src="imgUrl"
              v-if="isImg"
-             class="upload-img"
+             class="upload_img"
              @click="onClick(imgUrl)" />
         <video v-if="preview && !isImg"
-               class="upload-img"
+               class="upload_img"
                controls
                :src="imgUrl" />
       </div>
     </template>
 
     <!--上传区域-->
-    <div class="upload-area"
+    <div class="upload_area"
          :class="{disabled: disabled}"
          v-if="canUpload"
          @click="selectFiles"
@@ -35,12 +35,12 @@
          @drop="onDrop">
       <!--@slot 自定义上传区域-->
       <slot>
-        <div class="upload-box"
+        <div class="upload_box"
              :style="{'width': width+'px', 'height':height+'px'}">
           <!--@slot 自定义loading内容 -->
           <slot name="spinner"
                 v-if="uploading">
-            <div class="upload-loading">
+            <div class="upload_loading">
               <svg class="circular"
                    viewBox="25 25 50 50">
                 <circle class="path"
@@ -54,7 +54,7 @@
           <!--@slot 自定义placeholder内容 -->
           <slot name="placeholder"
                 v-else>
-            <div class="upload-placeholder"></div>
+            <div class="upload_placeholder" />
           </slot>
         </div>
       </slot>
@@ -62,13 +62,13 @@
 
     <!-- 自定义提示文字 -->
     <div v-if="tip"
-         class="upload-tip">
+         class="upload_tip">
       {{ tip }}
     </div>
 
-    <input class="upload-input"
+    <input class="upload_input"
            type="file"
-           ref="uploadInput"
+           ref="uploadInputRef"
            hidden
            :disabled="uploading"
            :accept="accept"
@@ -80,28 +80,16 @@
     <el-dialog title="剪裁图片"
                @close="colseDialog"
                :visible.sync="cropperModel">
-      <div class="cropper-content">
+      <div class="cropper_content">
         <div class="cropper"
              style="text-align:center">
-          <vueCropper ref="cropper"
+          <vueCropper ref="cropperRef"
                       :img="imgUrl"
-                      :outputSize="option.size"
-                      :outputType="option.outputType"
-                      :info="true"
-                      :full="option.full"
-                      :canMove="option.canMove"
-                      :canMoveBox="option.canMoveBox"
-                      :original="option.original"
-                      :autoCrop="option.autoCrop"
-                      :fixed="option.fixed"
-                      :fixedNumber="fixedNumber"
-                      :centerBox="option.centerBox"
-                      :infoTrue="option.infoTrue"
-                      :fixedBox="option.fixedBox"></vueCropper>
+                      v-bind="cropperOptions" />
         </div>
       </div>
       <div slot="footer"
-           class="dialog-footer">
+           class="dialog_footer">
         <el-button @click="cropperModel = false">取 消</el-button>
         <el-button type="primary"
                    @click="cropperFinish">确 定</el-button>
@@ -115,7 +103,6 @@
 import AliOSS from "ali-oss";
 import { VueCropper } from "vue-cropper";
 import ImgPreview from "@femessage/img-preview";
-import { upload_token } from "@/api";
 import ImageCompressor from "image-compressor.js";
 const imageCompressor = new ImageCompressor();
 
@@ -143,6 +130,13 @@ export default {
     dir: {
       type: String,
       default: process.env.OSS_DIR || ""
+    },
+    filenameMaxLength: {
+      type: Number,
+      default: filenameMaxLength
+    },
+    getOssConfig: {
+      type: Function
     },
     /**
      * 自定义域名, 该字段有值时, 返回的文件url拼接规则为: customDomain + / + dir + filename
@@ -289,8 +283,9 @@ export default {
       isHighlight: false,
       cropperModel: false,
       imgUrl: "",
+      ossConfig: {}, // oss 配置
       uploadInfo: {}, // 图片上传信息
-      option: {
+      cropperOptions: {
         img: "", // 裁剪图片的地址
         info: true, // 裁剪框的大小信息
         outputSize: 0.8, // 裁剪生成图片的质量
@@ -319,38 +314,27 @@ export default {
       return this.uploadList.length < maxLen;
     }
   },
-  async mounted() {
-    await this.getOssConfig();
-    if (!this.region || !this.bucket || !this.accessKeyId || !this.accessKeySecret) {
-      console.error("必要参数不能为空: region bucket accessKeyId accessKeySecret");
-      return;
-    }
-    if (this.accept && !mimeTypeFullRegex.test(this.accept)) {
-      console.warn(
-        "请设置正确的`accept`属性, 可参考:",
-        "https://developer.mozilla.org/zh-CN/docs/Web/HTTP/Basics_of_HTTP/MIME_types/Complete_list_of_MIME_types"
-      );
-    }
-    this.newClient();
-  },
   methods: {
     /**
      * @description 获取oss 配置
      */
-    async getOssConfig() {
-      let ossParam = {};
+    async setOssConfig() {
+      if (!this.getOssConfig) {
+        console.warn("没有getOssConfig方法");
+        return;
+      }
       try {
         const {
           data: { accessKeyId, accessKeySecret, endpoint, securityToken }
-        } = await upload_token();
-        let region = endpoint;
-        region = region.split("//");
-        region = region[1].split(".");
-        this.region = region[0];
-        this.accessKeyId = accessKeyId;
-        this.accessKeySecret = accessKeySecret;
-        this.bucket = process.env.VUE_APP_OSS_BUCKET;
-        this.stsToken = securityToken;
+        } = await this.getOssConfig();
+        const region = endpoint.split("//")[1].split(".")[0];
+        this.ossConfig = {
+          region,
+          accessKeyId,
+          accessKeySecret,
+          stsToken: securityToken,
+          bucket: process.env.VUE_APP_OSS_BUCKET
+        };
       } catch (e) {
         console.log(e);
       }
@@ -360,14 +344,13 @@ export default {
       this.imgUrl = "";
     },
     newClient() {
-      // https://help.aliyun.com/document_detail/32069.html?spm=a2c4g.11186623.6.801.LllSVA
-      this.client = new AliOSS({
-        region: this.region,
-        bucket: this.bucket,
-        accessKeyId: this.accessKeyId,
-        accessKeySecret: this.accessKeySecret,
-        stsToken: this.stsToken
-      });
+      if (!this.getOssConfig) return;
+      try {
+        // https://help.aliyun.com/document_detail/32069.html?spm=a2c4g.11186623.6.801.LllSVA
+        this.client = new AliOSS(this.ossConfig);
+      } catch (e) {
+        console.log(e);
+      }
     },
     onDelete(url, index) {
       const result = this.multiple ? this.uploadList.filter(v => v !== url) : "";
@@ -384,23 +367,16 @@ export default {
         this.$message.error("已达到上传的最大数量");
         return;
       }
-      this.$refs.uploadInput.click();
+      this.$refs.uploadInputRef.click();
     },
-    async uploadAli(file, data) {
-      // 上传到阿里云
+    async uploadPreCheck(file) {
       let filename = doubleSlash;
-      let _this = this;
-      let name = file.name;
+      const name = file.name;
       let key = "";
-      if (encodeURIComponent(name).length > filenameMaxLength) {
+      if (encodeURIComponent(name).length > this.filenameMaxLength) {
         alert("文件名称过长");
         return;
       }
-
-      /**
-       * loading过程事件
-       * @event loading
-       */
       this.$emit("loading", name);
 
       if (file.type.indexOf(image) > -1) {
@@ -410,58 +386,53 @@ export default {
       // 文件名-时间戳 作为上传文件key
       let pos = name.lastIndexOf(".");
       let suffix = "";
-      if (pos !== -1) {
+      if (pos > -1) {
         suffix = name.substring(pos);
       }
+      key = `${name.substring(0, pos)}-${Date.now()}${suffix}`;
 
-      key = `${name.substring(0, pos)}-${new Date().getTime()}${suffix}`;
+      return Promise.resolve([filename, key]);
+    },
+    uploadSuffix(res, filename) {
+      res.name = encodeURIComponent(res.name);
+      if (this.customDomain) {
+        if (this.customDomain.indexOf(doubleSlash) > -1) {
+          filename = `${this.customDomain}/${res.name}`;
+        } else filename += `${this.customDomain}/${res.name}`;
+      } else {
+        filename += `${this.ossConfig.bucket}.${this.ossConfig.region}.aliyuncs.com/${res.name}`;
+      }
+      this.$emit("input", this.multiple ? this.uploadList.concat(filename) : filename);
+      process.env.NODE_ENV === "development" && console.log(filename);
+    },
+    async uploadAli(file, data) {
+      // 上传到阿里云
+      let fixedNumber = "";
+      let key = "";
+      await this.uploadPreCheck(files[i]).then(res => ([filename, key] = res));
+      if (!filename) return;
+
       await this.client
         .multipartUpload(this.dir + key, data, this.uploadOptions)
         .then(res => {
-          // 协议无关
-          res.name = encodeURIComponent(res.name);
-          if (this.customDomain) {
-            if (this.customDomain.indexOf(doubleSlash) > -1) {
-              filename = `${this.customDomain}/${res.name}`;
-            } else filename += `${this.customDomain}/${res.name}`;
-          } else {
-            filename += `${this.bucket}.${this.region}.aliyuncs.com/${res.name}`;
-          }
-          this.$emit("input", this.multiple ? this.uploadList.concat(filename) : filename);
-          process.env.NODE_ENV === "development" && console.log(filename);
-          _this.cropperModel = false;
+          this.uploadSuffix(res, filename);
+          this.cropperModel = false;
         })
         .catch(err => {
-          // TODO 似乎可以干掉？🤔
-          console.log(err);
           this.uploading = false;
-
           // 捕获超时异常
-          if (e.code === "ConnectionTimeoutError") {
-            /**
-             * 上传超时事件
-             * @event timeout
-             */
+          if (err.code === "ConnectionTimeoutError") {
             this.$emit("timeout");
           }
           if (this.client.isCancel()) {
-            /**
-             * 上传操作被取消事件
-             * @event cancel
-             */
             this.$emit("cancel");
           } else {
-            /**
-             * 上传失败事件
-             * @event fail
-             */
             this.$emit("fail");
           }
         });
     },
     async upload(e, type = target) {
       // 防止loading过程重复上传
-      let _this = this;
       if (this.loading) return;
 
       let files = Array.from(e[type].files);
@@ -488,80 +459,32 @@ export default {
       const max = this.multiple ? this.max : 1;
       for (let i = 0; i < files.length; i++) {
         if (this.uploadList.length === max) break;
-        let file = files[i];
-        let name = file.name;
+        let filename = "";
         let key = "";
-
-        if (encodeURIComponent(name).length > filenameMaxLength) {
-          alert("文件名称过长");
-          break;
-        }
-        /**
-         * loading过程事件
-         * @event loading
-         */
-        this.$emit("loading", name);
-
-        if (file.type.indexOf(image) > -1) {
-          file = await imageCompressor.compress(file, this.compressOptions);
-        }
-
-        // 文件名-时间戳 作为上传文件key
-        let pos = name.lastIndexOf(".");
-        let suffix = "";
-        if (pos !== -1) {
-          suffix = name.substring(pos);
-        }
-
-        key = `${name.substring(0, pos)}-${new Date().getTime()}${suffix}`;
+        await this.uploadPreCheck(files[i]).then(res => ([filename, key] = res));
+        if (!filename) break;
 
         await this.client
-          .multipartUpload(this.dir + key, file, this.uploadOptions)
+          .multipartUpload(this.dir + key, files[i], this.uploadOptions)
           .then(res => {
-            // 协议无关
-            let filename = doubleSlash;
-            res.name = encodeURIComponent(res.name);
-            if (this.customDomain) {
-              if (this.customDomain.indexOf(doubleSlash) > -1) {
-                filename = `${this.customDomain}/${res.name}`;
-              } else filename += `${this.customDomain}/${res.name}`;
-            } else {
-              filename += `${this.bucket}.${this.region}.aliyuncs.com/${res.name}`;
-            }
-            this.$emit("input", this.multiple ? this.uploadList.concat(filename) : filename);
-            process.env.NODE_ENV === "development" && console.log(filename);
+            this.uploadSuffix(res, filename);
             currentUploads.push(filename);
-            if (_this.cropper && files.length === 1) {
-              _this.cropperModel = true;
-              _this.uploadInfo = files[0];
-              _this.imgUrl = filename;
+            if (this.cropper && files.length === 1) {
+              this.cropperModel = true;
+              this.uploadInfo = files[0];
+              this.imgUrl = filename;
             }
           })
           .catch(err => {
-            // TODO 似乎可以干掉？🤔
-            console.log(err);
             reset();
             this.uploading = false;
-
             // 捕获超时异常
-            if (e.code === "ConnectionTimeoutError") {
-              /**
-               * 上传超时事件
-               * @event timeout
-               */
+            if (err.code === "ConnectionTimeoutError") {
               this.$emit("timeout");
             }
             if (this.client.isCancel()) {
-              /**
-               * 上传操作被取消事件
-               * @event cancel
-               */
               this.$emit("cancel");
             } else {
-              /**
-               * 上传失败事件
-               * @event fail
-               */
               this.$emit("fail");
             }
           });
@@ -573,7 +496,6 @@ export default {
       this.uploading = false;
       // 没有一张上传成功的，不触发load事件
       if (currentUploads.length < 1) return;
-
       /**
        * 上传完成后触发的事件,返回url
        * 上传单张 返回 String,
@@ -613,30 +535,41 @@ export default {
     },
     cropperFinish() {
       // 图片剪切完成
-      let _this = this;
-      this.$refs.cropper.getCropBlob(data => {
-        console.log("data", this.uploadInfo);
-        this.uploadAli(_this.uploadInfo, data);
+      this.$refs.cropperRef.getCropBlob(data => {
+        this.uploadAli(this.uploadInfo, data);
         //上传阿里云服务器
       });
     }
   },
-  created() {}
+  async mounted() {
+    await this.setOssConfig();
+    if (this.ossConfig && Object.values(this.ossConfig).some(v => !v)) {
+      console.error("必要参数不能为空: region bucket accessKeyId accessKeySecret");
+      return;
+    }
+    if (this.accept && !mimeTypeFullRegex.test(this.accept)) {
+      console.warn(
+        "请设置正确的`accept`属性, 可参考:",
+        "https://developer.mozilla.org/zh-CN/docs/Web/HTTP/Basics_of_HTTP/MIME_types/Complete_list_of_MIME_types"
+      );
+    }
+    this.newClient();
+  }
 };
 </script>
 <style lang="scss">
 $border-color: #cad1e8;
 $active-color: #5d81f9;
 
-.upload-to-oss {
+.upload_to_oss {
   display: inline-block;
 
   .disabled {
     pointer-events: none;
   }
 
-  .upload-item,
-  .upload-box {
+  .upload_item,
+  .upload_box {
     display: inline-flex;
     justify-content: center;
     align-items: center;
@@ -651,26 +584,26 @@ $active-color: #5d81f9;
     }
   }
 
-  .is-preview {
+  .is_preview {
     &:hover {
       cursor: zoom-in;
     }
   }
 
-  .upload-item {
+  .upload_item {
     position: relative;
     margin: 0 8px 0 0;
   }
 
-  .upload-placeholder,
-  .upload-loading {
+  .upload_placeholder,
+  .upload_loading {
     position: relative;
     width: 100%;
     height: 100%;
     text-align: center;
   }
 
-  .upload-placeholder {
+  .upload_placeholder {
     &:before {
       width: 2px;
       height: 20px;
@@ -684,11 +617,11 @@ $active-color: #5d81f9;
     }
   }
 
-  .upload-placeholder:before,
-  .upload-placeholder:after,
-  .upload-del-icon:before,
-  .upload-del-icon:after,
-  .upload-loading:before {
+  .upload_placeholder:before,
+  .upload_placeholder:after,
+  .upload_del_icon:before,
+  .upload_del_icon:after,
+  .upload_loading:before {
     content: "";
     display: block;
     position: absolute;
@@ -697,7 +630,7 @@ $active-color: #5d81f9;
     transform: translate(-50%, -50%);
   }
 
-  .upload-loading {
+  .upload_loading {
     background-color: rgba(255, 255, 255, 0.9);
     border-radius: 3px;
     transition: opacity 0.3s;
@@ -748,7 +681,7 @@ $active-color: #5d81f9;
     }
   }
 
-  .upload-del-icon {
+  .upload_del_icon {
     position: absolute;
     right: -8px;
     top: -8px;
@@ -774,7 +707,7 @@ $active-color: #5d81f9;
     }
   }
 
-  .upload-img {
+  .upload_img {
     position: absolute;
     width: 100%;
     max-height: 100%;
@@ -783,29 +716,29 @@ $active-color: #5d81f9;
     transform: translate(0, -50%);
   }
 
-  .upload-input {
+  .upload_input {
     display: none;
   }
 
-  .upload-area {
+  .upload_area {
     cursor: pointer;
     display: inline-block;
   }
 
-  .upload-tip {
+  .upload_tip {
     margin-top: 8px;
     color: #606266;
     font-size: 12px;
   }
 }
 
-.upload-to-oss--highlight {
-  .upload-box {
+.upload_to_oss_highlight {
+  .upload_box {
     border-color: $active-color;
     background-color: #5d81f914;
   }
 }
-.cropper-content {
+.cropper_content {
   .cropper {
     width: auto;
     height: 300px;
